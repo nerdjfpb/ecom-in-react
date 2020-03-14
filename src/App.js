@@ -4,12 +4,10 @@ import { connect } from 'react-redux'
 import { createStructuredSelector } from 'reselect'
 
 import {
-  auth,
-  createUserProfileDocument,
   firestore,
   convertCollectionsSnapshotToMap
 } from './firebase/firebase.utlis'
-import { setCurrentUser } from './redux/user/user.action'
+import { checkUserSession } from './redux/user/user.action'
 import { selectCurrentUser } from './redux/user/user.selector'
 import Homepage from './pages/homepage/Homepage.components'
 import ShopPage from './pages/shop/shop.page'
@@ -44,21 +42,25 @@ class App extends React.Component {
       this.setState({ loading: false })
     })
 
-    const { setCurrentUser } = this.props
-    this.unsubscribeFromAuth = auth.onAuthStateChanged(async userAuth => {
-      if (userAuth) {
-        const userRef = await createUserProfileDocument(userAuth)
+    const { checkUserSession } = this.props
+    checkUserSession()
 
-        userRef.onSnapshot(snapShot => {
-          this.props.setCurrentUser({
-            id: snapShot.id,
-            ...snapShot.data()
-          })
-        })
-      }
+    // old codes without redux saga
+    // const { setCurrentUser } = this.props
+    // this.unsubscribeFromAuth = auth.onAuthStateChanged(async userAuth => {
+    //   if (userAuth) {
+    //     const userRef = await createUserProfileDocument(userAuth)
 
-      setCurrentUser(userAuth)
-    })
+    //     userRef.onSnapshot(snapShot => {
+    //       this.props.setCurrentUser({
+    //         id: snapShot.id,
+    //         ...snapShot.data()
+    //       })
+    //     })
+    //   }
+
+    // setCurrentUser(userAuth)
+    // })
   }
 
   componentWillUnmount() {
@@ -101,7 +103,8 @@ const mapStateToProps = createStructuredSelector({
 })
 
 const mapDispatchToProps = dispatch => ({
-  setCurrentUser: user => dispatch(setCurrentUser(user)),
+  // setCurrentUser: user => dispatch(setCurrentUser(user)),
+  checkUserSession: () => dispatch(checkUserSession()),
   updateCollections: collectionMap => dispatch(updateCollections(collectionMap))
 })
 
