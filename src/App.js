@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Switch, Route, Redirect } from 'react-router-dom'
 import { connect } from 'react-redux'
 import { createStructuredSelector } from 'reselect'
@@ -22,80 +22,45 @@ import './App.css'
 
 const CollectionPageWithSpinner = WithSpinner(CollectionPage)
 
-class App extends React.Component {
-  state = {
-    loading: true
-  }
-  //Shop page data
-  unsubscribeFromSnapshotp = null
+const App = ({ updateCollections, checkUserSession, currentUser }) => {
+  const [loading, setLoading] = useState(true)
 
-  unsubscribeFromAuth = null
-
-  componentDidMount() {
-    //Shop Page data
-    const { updateCollections } = this.props
+  useEffect(() => {
     const collectionRef = firestore.collection('collections')
-
     collectionRef.onSnapshot(async snapshot => {
       const collectionsMap = convertCollectionsSnapshotToMap(snapshot)
       updateCollections(collectionsMap)
-      this.setState({ loading: false })
+      setLoading(false)
     })
+  }, [updateCollections])
 
-    const { checkUserSession } = this.props
+  useEffect(() => {
     checkUserSession()
+  }, [checkUserSession])
 
-    // old codes without redux saga
-    // const { setCurrentUser } = this.props
-    // this.unsubscribeFromAuth = auth.onAuthStateChanged(async userAuth => {
-    //   if (userAuth) {
-    //     const userRef = await createUserProfileDocument(userAuth)
-
-    //     userRef.onSnapshot(snapShot => {
-    //       this.props.setCurrentUser({
-    //         id: snapShot.id,
-    //         ...snapShot.data()
-    //       })
-    //     })
-    //   }
-
-    // setCurrentUser(userAuth)
-    // })
-  }
-
-  componentWillUnmount() {
-    this.unsubscribeFromAuth()
-  }
-
-  render() {
-    return (
-      <div className="App">
-        <Header />
-        <Switch>
-          <Route exact path="/" component={Homepage} />
-          <Route exact path="/shop" component={ShopPage} />
-          <Route
-            exact
-            path="/signin"
-            render={() =>
-              this.props.currentUser ? <Redirect to="/" /> : <SignInAndSignUp />
-            }
-          />
-          <Route exact path="/checkout" component={CheckoutPage} />
-          {/* <Route path="/shop/:collectionId" component={CollectionPage} /> */}
-          <Route
-            path="/shop/:collectionId"
-            render={props => (
-              <CollectionPageWithSpinner
-                isLoading={this.state.loading}
-                {...props}
-              />
-            )}
-          />
-        </Switch>
-      </div>
-    )
-  }
+  return (
+    <div className="App">
+      <Header />
+      <Switch>
+        <Route exact path="/" component={Homepage} />
+        <Route exact path="/shop" component={ShopPage} />
+        <Route
+          exact
+          path="/signin"
+          render={() =>
+            currentUser ? <Redirect to="/" /> : <SignInAndSignUp />
+          }
+        />
+        <Route exact path="/checkout" component={CheckoutPage} />
+        <Route
+          path="/shop/:collectionId"
+          render={props => (
+            <CollectionPageWithSpinner isLoading={loading} {...props} />
+          )}
+        />
+      </Switch>
+    </div>
+  )
 }
 
 const mapStateToProps = createStructuredSelector({
@@ -103,7 +68,6 @@ const mapStateToProps = createStructuredSelector({
 })
 
 const mapDispatchToProps = dispatch => ({
-  // setCurrentUser: user => dispatch(setCurrentUser(user)),
   checkUserSession: () => dispatch(checkUserSession()),
   updateCollections: collectionMap => dispatch(updateCollections(collectionMap))
 })
